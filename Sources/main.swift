@@ -37,7 +37,10 @@ let b = Connection(service: service, user:"broq", pwd:"anypassword")
 try b.open()
 //for i in 0...100000{
 let res = try! b.execute("select * from trade")
-    res[3]
+    let r = res[3]
+
+    print(r["USER_ID"] as! Int)
+    print(r["QUOTE_ID"] as! String)
 //}
 
 
