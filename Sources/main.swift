@@ -5,7 +5,7 @@
 
 
 
-
+import Foundation
 
 
 
@@ -29,28 +29,26 @@ public struct OracleService{
     }
 }
 
-
+//let timestamp = NSDate().timeIntervalSince1970
 // var c: Connection? = Connection()
 let service = OracleService(host: "dv", port:"1521", service: "xe")
 
 let b = Connection(service: service, user:"broq", pwd:"anypassword")
 try b.open()
-//for i in 0...100000{
-    let res = try! b.execute("select * from trade where id=:id", params: ["id": 2,
-        ])
-    for r in res {
-//        let a = r
-//        let c = r["EXPIRATION_TIME"] as? String
+let cursor = try b.cursor()
+let timestamp = NSDate().timeIntervalSince1970
+//for i in 0...1000{
+    try! cursor.execute("select * from trade where id=:id", params: ["id": 2])
+    for r in cursor {
         print(r)
-        //    print(r["USER_ID"] as! Int)
-        //    print(r["QUOTE_ID"] as! String)
-        //    print(r["ORIGINAL_PRICE"] as? Float)
-        //    print(r["CLIENT_EXEC_PRICE"] as! Int)
-        //    print(r["REJECT_REASON_ID"] as? Int?)
     }
-    
-//}
+    try! cursor.execute("select * from users where id=:id", params: ["id": 2])
+    for r in cursor {
+        print(r)
+    }
 
+//}
+print(NSDate().timeIntervalSince1970 - timestamp)
 // print(c?.connected)
 // c = nil
 // while true{

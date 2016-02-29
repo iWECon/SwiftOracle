@@ -5,7 +5,7 @@ import cocilib
 
 
 enum OracleError: ErrorType {
-    case NotConnected
+    case NotConnected, NotExecuted
 }
 
 
@@ -20,7 +20,7 @@ func error_handler (err: COpaquePointer) {
 class Connection {
     // associatedtype Error: ErrorType
     
-    private var cn: COpaquePointer? = nil
+    private var connection: COpaquePointer? = nil
     
     let conn_info: ConnectionInfo
     required init(service_name: String, user:String, pwd: String) {
@@ -41,62 +41,26 @@ class Connection {
     }
     
     func close() {
-        guard var cn = cn else {
+        guard var connection = connection else {
             return
         }
-        OCI_ConnectionFree(cn)
-        cn = nil
+        OCI_ConnectionFree(connection)
+        connection = nil
     }
     func open() throws {
-        cn = OCI_ConnectionCreate(conn_info.service_name, conn_info.user, conn_info.pwd, UInt32(OCI_SESSION_DEFAULT));
+        connection = OCI_ConnectionCreate(conn_info.service_name, conn_info.user, conn_info.pwd, UInt32(OCI_SESSION_DEFAULT));
     }
-    
-    func bind_type(st: COpaquePointer, name: String, val: AnyObject) {
-        
-        switch val {
-        case let val as Int:
-            let v = Int32(val)
-            let p = UnsafeMutablePointer<Int32>.alloc(1)
-            p.memory = v
-            OCI_BindInt(st, name, p)
-//            p.dealloc(1) //will be not correct
-        case let val as String:
-            //            var array: [UInt8] = Array(val.utf8)
-            //            array.append(0)
-            //            let p = UnsafeMutablePointer<otext>(array)
-            val.withCString({OCI_BindString(st, name, UnsafeMutablePointer($0), UInt32(val.characters.count))})
-            //            p.destroy()
-        case let val as Bool:
-            let p = UnsafeMutablePointer<Int32>.alloc(1)
-            p.memory = Int32((val) ? 1: 0)
-            OCI_BindBoolean(st, name, p)
-        default:
-            assert(1==0)
-        }
-    }
-    func execute(statement: String, params: [String: AnyObject]=[:]) throws -> Result  {
-        guard let cn = cn else {
+    func cursor() throws -> Cursor {
+        guard let connection = connection else {
             throw OracleError.NotConnected
         }
-        let st = OCI_StatementCreate(cn);
-        let prepared = OCI_Prepare(st, statement)
-        assert(prepared == 1)
-        for (name, val) in params {
-            //            var v = Int32(val as! Int)
-            //            OCI_BindInt(st, name, &v)
-            bind_type(st, name: name, val: val)
-        }
-        let executed = OCI_Execute(st);
-        
-        assert(executed==1)
-        return Result(st)
-        
+        return Cursor(connection: connection)
     }
     var connected: Bool {
-        guard let cn = cn else {
+        guard let connection = connection else {
             return false
         }
-        return OCI_IsConnected(cn) == 1
+        return OCI_IsConnected(connection) == 1
     }
     deinit {
         close()
