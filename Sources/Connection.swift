@@ -36,7 +36,7 @@ class Connection {
     func get_last_error(){
         let err = OCI_GetLastError()
         //        if err == 0 {
-        print(String.fromCString(OCI_ErrorGetString(err)))
+        print(String.fromCString(OCI_ErrorGetString(err))!)
         //        }
     }
     

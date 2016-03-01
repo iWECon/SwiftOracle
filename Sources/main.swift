@@ -41,11 +41,16 @@ b.autocommit = true
 let cursor = try b.cursor()
 let timestamp = NSDate().timeIntervalSince1970
 for i in 0..<1 {
-//    try cursor.execute("select * from trade where  reject_reason_id is :reject_reason_id", params: ["reject_reason_id": nil])
+    try cursor.execute("select * from trade where quote_id=:quote_id", params: ["quote_id": "іфваофівавіфавіфавфіавіфаіваіфваіфвафіваіфваіфваіфваівфіфваіфваів"])
+    for r in cursor {
+        print(r)
+    }
+//    try cursor.execute("insert into users (id, login, alive, trade_confirmation_type, can_limit_trade, can_market_trade) values (USERS_ID_SEQ.nextval, :2, :3, 1, 1, 1) RETURNING id INTO :id ", params: ["2": "іфваasdfфівд", "3": 3,])
 //    for r in cursor {
 //        print(r)
-    try cursor.execute("insert into users (id, login, alive, trade_confirmation_type, can_limit_trade, can_market_trade) values (105, :2, :3, 1, 1, 1)", params: ["2": "іфвафівд", "3": 3,])
-    print(cursor.affected)
+//    }
+    
+//    print(cursor.affected)
 }
 
 print(NSDate().timeIntervalSince1970 - timestamp)

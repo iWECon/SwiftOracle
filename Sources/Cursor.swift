@@ -142,11 +142,9 @@ public class Cursor : SequenceType, GeneratorType {
             OCI_BindInt(st, name, p)
         //            p.dealloc(1) //will be not correct
         case let val as String:
-            let v = (val as NSString).UTF8String
+            let v = Array(val.nulTerminatedUTF8)
             let p = UnsafeMutablePointer<Int8>(v)
             OCI_BindString(st, name, p, 0)
-            print(String.fromCString(p))
-            
             
         //            p.destroy()
         case let val as Bool:
