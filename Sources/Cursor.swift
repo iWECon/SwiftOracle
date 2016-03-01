@@ -17,9 +17,25 @@ class ResultDict {
     //    }
 }
 
-
-//enum DataTypes: Int32 {
-//    case num = OCI_CDT_NUMERIC,
+//OCI_CDT_NUMERIC
+public enum DataTypes {
+    case number(scale: Int), timestamp, string, invalid
+    init(col: COpaquePointer){
+        let type = OCI_ColumnGetType(col)
+        switch Int32(type) {
+        case OCI_CDT_NUMERIC:
+            let scale = OCI_ColumnGetScale(col)
+            self = .number(scale: Int(scale))
+        case OCI_CDT_TEXT:
+            self = .string
+        case OCI_CDT_TIMESTAMP:
+            self = .timestamp
+        default:
+            self = .invalid
+            assert(1==0)
+        }
+    }
+}
 //    datetime = OCI_CDT_DATETIME,
 //    text = OCI_CDT_TEXT,
 //    long = OCI_CDT_LONG,
@@ -40,7 +56,7 @@ class ResultDict {
 
 
 public class Cursor : SequenceType, GeneratorType {
-    public typealias RowType = [String: AnyObject]
+    public typealias RowType = [String: AnyObject?]
     
     public var resultPointer: COpaquePointer?
     private var statementPointer: COpaquePointer?
@@ -77,9 +93,9 @@ public class Cursor : SequenceType, GeneratorType {
             let name_p =  OCI_ColumnGetName(col)
             let name =  String.fromCString(name_p)
             
-            
+            let type = DataTypes(col: col)
             result.append(
-                Field(name: name!, type: OCI_ColumnGetType(col)
+                Field(name: name!, type: type
                 )
             )
         }
@@ -93,39 +109,45 @@ public class Cursor : SequenceType, GeneratorType {
         }
         return Int(OCI_GetAffectedRows(statementPointer))
     }
-    func getValue(type: UInt32, index: UInt32) throws -> AnyObject {
+    func getValue(type: DataTypes, index: UInt32) throws -> AnyObject {
         guard let resultPointer=resultPointer else {
             throw OracleError.NotExecuted
         }
-        switch Int32(type) {
-        case OCI_CDT_TEXT, OCI_CDT_TIMESTAMP:
+        switch type {
+        case .string, .timestamp:
             let s = OCI_GetString(resultPointer, index)
             return String.fromCString(s)!
-        case OCI_CDT_NUMERIC:
-            return OCI_GetDouble(resultPointer, index)
-            //        case :
-        //            return Int(OCI_GetInt(resultPointer, index))
+            
+        case let .number(scale):
+            if scale==0 {
+                return Int(OCI_GetInt(resultPointer, index))
+            }
+            else{
+                return OCI_GetDouble(resultPointer, index)
+            }
         default:
-            assert(0==1,"bad value\(type)")
+            assert(0==1,"bad value \(type)")
             return "asd"
         }
-        return "asd"
-    }
-    
-    func bind_type(st: COpaquePointer, name: String, val: AnyObject) {
         
+    }
+    private var string_p: UnsafeMutablePointer<Int8>?
+    private var string_val: String?
+    func bind_type(st: COpaquePointer, name: String, val: AnyObject?) {
         switch val {
         case let val as Int:
             let v = Int32(val)
             let p = UnsafeMutablePointer<Int32>.alloc(1)
-            p.memory = v
+            p.initialize(v)
             OCI_BindInt(st, name, p)
         //            p.dealloc(1) //will be not correct
         case let val as String:
-            //            var array: [UInt8] = Array(val.utf8)
-            //            array.append(0)
-            //            let p = UnsafeMutablePointer<otext>(array)
-            val.withCString({OCI_BindString(st, name, UnsafeMutablePointer($0), UInt32(val.characters.count))})
+            let v = (val as NSString).UTF8String
+            let p = UnsafeMutablePointer<Int8>(v)
+            OCI_BindString(st, name, p, 0)
+            print(String.fromCString(p))
+            
+            
         //            p.destroy()
         case let val as Bool:
             let p = UnsafeMutablePointer<Int32>.alloc(1)
@@ -137,7 +159,7 @@ public class Cursor : SequenceType, GeneratorType {
     }
     
     
-    func execute(statement: String, params: [String: AnyObject]=[:]) throws {
+    func execute(statement: String, params: [String: AnyObject?]=[:]) throws {
         //        guard let connection = cn else {
         //            throw OracleError.NotConnected
         //        }
@@ -178,8 +200,10 @@ public class Cursor : SequenceType, GeneratorType {
         for (fieldIndex, field) in fields.enumerate() {
             let index = UInt32(fieldIndex+1)
             if OCI_IsNull(resultPointer, index) == 1 {
-                result[field.name] = nil
+                result[field.name] = nil as AnyObject?
+                //                result.append(nil as AnyObject?)
             } else {
+                //                result.append(try getValue(field.type, index: index))
                 result[field.name] = try getValue(field.type, index: index)
                 
             }

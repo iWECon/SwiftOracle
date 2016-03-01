@@ -62,6 +62,20 @@ class Connection {
         }
         return OCI_IsConnected(connection) == 1
     }
+    var autocommit: Bool {
+        set(newValue) {
+            OCI_SetAutoCommit(connection!, (newValue) ? 1 : 0)
+        }
+        get {
+            return OCI_GetAutoCommit(connection!) == 1
+        }
+    }
+    func transaction_create() throws {
+        guard let connection = connection else {
+            throw OracleError.NotExecuted
+        }
+//        OCI_TransactionCreate(connection, nil, nil, nil)
+    }
     deinit {
         close()
         OCI_Cleanup()  //should be once per app

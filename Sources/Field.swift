@@ -2,9 +2,9 @@
 
 
 public struct Field: SQL.Field {
-    public var name: String
-    public var type: UInt32
-    init(name: String, type: UInt32) {
+    public let name: String
+    public let type: DataTypes
+    init(name: String, type: DataTypes) {
         self.name = name
         self.type = type
    }
