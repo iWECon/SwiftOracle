@@ -59,26 +59,21 @@ public class Cursor : SequenceType, GeneratorType {
     public typealias RowType = [String: AnyObject?]
     
     public var resultPointer: COpaquePointer?
-    private var statementPointer: COpaquePointer?
+    private var statementPointer: COpaquePointer
     private let connection: COpaquePointer
     
     private var _fields: [Field]?
     
     public init(connection: COpaquePointer) {
         self.connection = connection
+        statementPointer = OCI_StatementCreate(connection)
     }
     
     deinit {
         clear()
     }
     public func clear() {
-        guard let statementPointer = statementPointer else {
-            return
-        }
         OCI_StatementFree(statementPointer)
-        _fields = nil
-        //        OCI_ReleaseResultsets(statementPointer) //optional
-        
     }
     private func get_fields() -> [Field] {
         guard let resultPointer=self.resultPointer else {
@@ -104,9 +99,6 @@ public class Cursor : SequenceType, GeneratorType {
         
     }
     var affected: Int {
-        guard let statementPointer = statementPointer else {
-            return 0
-        }
         return Int(OCI_GetAffectedRows(statementPointer))
     }
     func getValue(type: DataTypes, index: UInt32) throws -> AnyObject {
@@ -132,28 +124,25 @@ public class Cursor : SequenceType, GeneratorType {
         
     }
     
-    func bind_type(st: COpaquePointer, name: String, val: AnyObject?) {
+    func bind_type(name: String, val: AnyObject?) {
         switch val {
         case let val as Int:
             let v = Int32(val)
             let p = UnsafeMutablePointer<Int32>.alloc(1)
             p.initialize(v)
-            OCI_BindInt(st, name, p)
+            OCI_BindInt(statementPointer, name, p)
         //            p.dealloc(1) //will be not correct
         case let val as String:
-            let maybe_v = val.cStringUsingEncoding(NSUTF8StringEncoding)
-            guard let v = maybe_v else {
-                return
-            }
+            let v = Array(val.nulTerminatedUTF8).map( {Int8($0) })
             let p = UnsafeMutablePointer<Int8>.alloc(v.count)
             p.initializeFrom(v)
-            OCI_BindString(st, name, p, 0)
+            OCI_BindString(statementPointer, name, p, 0)
             
         //            p.destroy()
         case let val as Bool:
             let p = UnsafeMutablePointer<Int32>.alloc(1)
             p.memory = Int32((val) ? 1: 0)
-            OCI_BindBoolean(st, name, p)
+            OCI_BindBoolean(statementPointer, name, p)
         default:
             assert(1==0)
         }
@@ -164,19 +153,21 @@ public class Cursor : SequenceType, GeneratorType {
         //        guard let connection = cn else {
         //            throw OracleError.NotConnected
         //        }
-        clear()
-        statementPointer = OCI_StatementCreate(connection)
+        _fields = nil
+        if resultPointer != nil{
+            OCI_ReleaseResultsets(statementPointer)
+        }
         
-        let prepared = OCI_Prepare(statementPointer!, statement)
+        let prepared = OCI_Prepare(statementPointer, statement)
         assert(prepared == 1)
         for (name, val) in params {
             //            var v = Int32(val as! Int)
             //            OCI_BindInt(st, name, &v)
-            bind_type(statementPointer!, name: name, val: val)
+            bind_type(name, val: val)
         }
-        let executed = OCI_Execute(statementPointer!);
+        let executed = OCI_Execute(statementPointer);
         assert(executed==1)
-        resultPointer = OCI_GetResultset(statementPointer!)
+        resultPointer = OCI_GetResultset(statementPointer)
     }
     public func fetchone() -> RowType? {
         guard let resultPointer=resultPointer else {
