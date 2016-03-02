@@ -40,17 +40,23 @@ try b.open()
 b.autocommit = true
 let cursor = try b.cursor()
 let timestamp = NSDate().timeIntervalSince1970
-for i in 0..<1 {
-    try cursor.execute("select * from trade where quote_id=:quote_id", params: ["quote_id": "іфваофівавіфавіфавфіавіфаіваіфваіфвафіваіфваіфваіфваівфіфваіфваів"])
+for i in 0..<2 {
+    try cursor.execute("select * from users where login=:login", params: ["login": "user2"])
     for r in cursor {
         print(r)
     }
-//    try cursor.execute("insert into users (id, login, alive, trade_confirmation_type, can_limit_trade, can_market_trade) values (USERS_ID_SEQ.nextval, :2, :3, 1, 1, 1) RETURNING id INTO :id ", params: ["2": "іфваasdfфівд", "3": 3,])
+//    cursor.clear()
+//    try cursor.execute("select * from sources where id=:id", params: ["id": 3])
 //    for r in cursor {
 //        print(r)
 //    }
     
-//    print(cursor.affected)
+    //    try cursor.execute("insert into users (id, login, alive, trade_confirmation_type, can_limit_trade, can_market_trade) values (USERS_ID_SEQ.nextval, :2, :3, 1, 1, 1) RETURNING id INTO :id ", params: ["2": "іфваasdfфівд", "3": 3,])
+    //    for r in cursor {
+    //        print(r)
+    //    }
+    
+    //    print(cursor.affected)
 }
 
 print(NSDate().timeIntervalSince1970 - timestamp)

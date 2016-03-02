@@ -131,8 +131,7 @@ public class Cursor : SequenceType, GeneratorType {
         }
         
     }
-    private var string_p: UnsafeMutablePointer<Int8>?
-    private var string_val: String?
+    
     func bind_type(st: COpaquePointer, name: String, val: AnyObject?) {
         switch val {
         case let val as Int:
@@ -142,8 +141,12 @@ public class Cursor : SequenceType, GeneratorType {
             OCI_BindInt(st, name, p)
         //            p.dealloc(1) //will be not correct
         case let val as String:
-            let v = Array(val.nulTerminatedUTF8)
-            let p = UnsafeMutablePointer<Int8>(v)
+            let maybe_v = val.cStringUsingEncoding(NSUTF8StringEncoding)
+            guard let v = maybe_v else {
+                return
+            }
+            let p = UnsafeMutablePointer<Int8>.alloc(v.count)
+            p.initializeFrom(v)
             OCI_BindString(st, name, p, 0)
             
         //            p.destroy()
