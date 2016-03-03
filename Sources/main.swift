@@ -42,7 +42,8 @@ let timestamp = NSDate().timeIntervalSince1970
 
 let cursor = try b.cursor()
 
-for i in 0..<1 {
+for i in 0..<10000 {
+
     try cursor.execute("select * from users where login=:login", params: ["login": "user2"])
     for r in cursor {
         print(r)

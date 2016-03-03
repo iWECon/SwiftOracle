@@ -19,7 +19,7 @@ class ResultDict {
 
 //OCI_CDT_NUMERIC
 public enum DataTypes {
-    case number(scale: Int), timestamp, string, invalid
+    case number(scale: Int), timestamp, bool, string, invalid
     init(col: COpaquePointer){
         let type = OCI_ColumnGetType(col)
         switch Int32(type) {
@@ -30,12 +30,16 @@ public enum DataTypes {
             self = .string
         case OCI_CDT_TIMESTAMP:
             self = .timestamp
+        case OCI_CDT_BOOLEAN:
+            self = .bool
         default:
             self = .invalid
             assert(1==0)
         }
     }
 }
+
+
 //    datetime = OCI_CDT_DATETIME,
 //    text = OCI_CDT_TEXT,
 //    long = OCI_CDT_LONG,
@@ -52,8 +56,50 @@ public enum DataTypes {
 //}
 
 
-//case Number(precise)
 
+
+class BindVar {
+
+    private let dealoc: () -> Void
+    init(statementPointer: COpaquePointer, name: String, val: AnyObject?) {
+        switch val {
+        case let val as Int:
+            let v = Int32(val)
+            let p = UnsafeMutablePointer<Int32>.alloc(1)
+            p.initialize(v)
+            OCI_BindInt(statementPointer, name, p)
+            dealoc = {
+                p.destroy()
+                p.dealloc(1)
+            }
+        case let val as String:
+            let v = Array(val.nulTerminatedUTF8).map( {Int8($0) })
+            let p = UnsafeMutablePointer<Int8>.alloc(v.count)
+            p.initializeFrom(v)
+            OCI_BindString(statementPointer, name, p, 0)
+            dealoc = {
+                p.destroy()
+                p.dealloc(v.count)
+            }
+        case let val as Bool:
+            let p = UnsafeMutablePointer<Int32>.alloc(1)
+            p.initialize(Int32((val) ? 1: 0))
+            OCI_BindBoolean(statementPointer, name, p)
+            dealoc = {
+                p.destroy()
+                p.dealloc(1)
+            }
+        default:
+            assert(1==0)
+            dealoc = {}
+        }
+        
+    }
+    deinit {
+        dealoc()
+    }
+    
+}
 
 public class Cursor : SequenceType, GeneratorType {
     public typealias RowType = [String: AnyObject?]
@@ -63,6 +109,8 @@ public class Cursor : SequenceType, GeneratorType {
     private let connection: COpaquePointer
     
     private var _fields: [Field]?
+    
+    private var binded_vars: [BindVar] = []
     
     public init(connection: COpaquePointer) {
         self.connection = connection
@@ -94,9 +142,7 @@ public class Cursor : SequenceType, GeneratorType {
                 )
             )
         }
-        //        print(result)
         return result
-        
     }
     var affected: Int {
         return Int(OCI_GetAffectedRows(statementPointer))
@@ -124,46 +170,22 @@ public class Cursor : SequenceType, GeneratorType {
         
     }
     
-    func bind_type(name: String, val: AnyObject?) {
-        switch val {
-        case let val as Int:
-            let v = Int32(val)
-            let p = UnsafeMutablePointer<Int32>.alloc(1)
-            p.initialize(v)
-            OCI_BindInt(statementPointer, name, p)
-        //            p.dealloc(1) //will be not correct
-        case let val as String:
-            let v = Array(val.nulTerminatedUTF8).map( {Int8($0) })
-            let p = UnsafeMutablePointer<Int8>.alloc(v.count)
-            p.initializeFrom(v)
-            OCI_BindString(statementPointer, name, p, 0)
-            
-        //            p.destroy()
-        case let val as Bool:
-            let p = UnsafeMutablePointer<Int32>.alloc(1)
-            p.memory = Int32((val) ? 1: 0)
-            OCI_BindBoolean(statementPointer, name, p)
-        default:
-            assert(1==0)
-        }
+    
+    func bind(name: String, value: AnyObject?) {
+        binded_vars.append(BindVar(statementPointer: statementPointer, name: name, val: value))
     }
     
-    
     func execute(statement: String, params: [String: AnyObject?]=[:]) throws {
-        //        guard let connection = cn else {
-        //            throw OracleError.NotConnected
-        //        }
         _fields = nil
         if resultPointer != nil{
             OCI_ReleaseResultsets(statementPointer)
         }
+        binded_vars = []
         
         let prepared = OCI_Prepare(statementPointer, statement)
         assert(prepared == 1)
         for (name, val) in params {
-            //            var v = Int32(val as! Int)
-            //            OCI_BindInt(st, name, &v)
-            bind_type(name, val: val)
+            bind(name, value: val)
         }
         let executed = OCI_Execute(statementPointer);
         assert(executed==1)
