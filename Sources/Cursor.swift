@@ -58,49 +58,6 @@ public enum DataTypes {
 
 
 
-class BindVar {
-
-    private let dealoc: () -> Void
-    init(statementPointer: COpaquePointer, name: String, val: AnyObject?) {
-        switch val {
-        case let val as Int:
-            let v = Int32(val)
-            let p = UnsafeMutablePointer<Int32>.alloc(1)
-            p.initialize(v)
-            OCI_BindInt(statementPointer, name, p)
-            dealoc = {
-                p.destroy()
-                p.dealloc(1)
-            }
-        case let val as String:
-            let v = Array(val.nulTerminatedUTF8).map( {Int8($0) })
-            let p = UnsafeMutablePointer<Int8>.alloc(v.count)
-            p.initializeFrom(v)
-            OCI_BindString(statementPointer, name, p, 0)
-            dealoc = {
-                p.destroy()
-                p.dealloc(v.count)
-            }
-        case let val as Bool:
-            let p = UnsafeMutablePointer<Int32>.alloc(1)
-            p.initialize(Int32((val) ? 1: 0))
-            OCI_BindBoolean(statementPointer, name, p)
-            dealoc = {
-                p.destroy()
-                p.dealloc(1)
-            }
-        default:
-            assert(1==0)
-            dealoc = {}
-        }
-        
-    }
-    deinit {
-        dealoc()
-    }
-    
-}
-
 public class Cursor : SequenceType, GeneratorType {
     public typealias RowType = [String: AnyObject?]
     
@@ -170,22 +127,26 @@ public class Cursor : SequenceType, GeneratorType {
         
     }
     
-    
-    func bind(name: String, value: AnyObject?) {
-        binded_vars.append(BindVar(statementPointer: statementPointer, name: name, val: value))
-    }
-    
-    func execute(statement: String, params: [String: AnyObject?]=[:]) throws {
+    func reset() {
         _fields = nil
+        binded_vars = []
         if resultPointer != nil{
             OCI_ReleaseResultsets(statementPointer)
         }
-        binded_vars = []
-        
+        resultPointer = nil
+    }
+    
+    func bind(name: String, bindVar: BindVar) {
+        bindVar.bind(statementPointer, name)
+        binded_vars.append(bindVar)
+    }
+    
+    func execute(statement: String, params: [String: BindVar]=[:]) throws {
+        reset()
         let prepared = OCI_Prepare(statementPointer, statement)
         assert(prepared == 1)
-        for (name, val) in params {
-            bind(name, value: val)
+        for (name, bindVar) in params {
+            bind(name, bindVar: bindVar)
         }
         let executed = OCI_Execute(statementPointer);
         assert(executed==1)
