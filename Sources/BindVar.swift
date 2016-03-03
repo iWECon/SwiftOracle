@@ -44,6 +44,7 @@ class BindVar: StringLiteralConvertible, IntegerLiteralConvertible, BooleanLiter
         }
     }
     
+    
     init (fromDouble value: Double) {
         let p = UnsafeMutablePointer<Double>.alloc(1)
         p.initialize(value)

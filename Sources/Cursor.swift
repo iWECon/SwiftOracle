@@ -19,7 +19,7 @@ class ResultDict {
 
 //OCI_CDT_NUMERIC
 public enum DataTypes {
-    case number(scale: Int), timestamp, bool, string, invalid
+    case number(scale: Int), int, timestamp, bool, string, invalid
     init(col: COpaquePointer){
         let type = OCI_ColumnGetType(col)
         switch Int32(type) {
@@ -86,10 +86,8 @@ public class Cursor : SequenceType, GeneratorType {
         }
         var result: [Field] = []
         let colsCount = OCI_GetColumnCount(resultPointer)
-        //        print("colsCount=\(colsCount)")
         for i in 1...colsCount {
             let col = OCI_GetColumn(resultPointer, i)
-            //            print(col)
             let name_p =  OCI_ColumnGetName(col)
             let name =  String.fromCString(name_p)
             
@@ -141,12 +139,24 @@ public class Cursor : SequenceType, GeneratorType {
         binded_vars.append(bindVar)
     }
     
-    func execute(statement: String, params: [String: BindVar]=[:]) throws {
+    func register(name: String, type: DataTypes) {
+        switch type {
+        case .int:
+            OCI_RegisterInt(statementPointer, name)
+        default:
+            assert(1==0)
+        }
+    }
+    
+    func execute(statement: String, params: [String: BindVar]=[:], register: [String: DataTypes]=[:]) throws {
         reset()
         let prepared = OCI_Prepare(statementPointer, statement)
         assert(prepared == 1)
         for (name, bindVar) in params {
             bind(name, bindVar: bindVar)
+        }
+        for (name, type) in register {
+            self.register(name, type: type)
         }
         let executed = OCI_Execute(statementPointer);
         assert(executed==1)
@@ -176,9 +186,7 @@ public class Cursor : SequenceType, GeneratorType {
             let index = UInt32(fieldIndex+1)
             if OCI_IsNull(resultPointer, index) == 1 {
                 result[field.name] = nil as AnyObject?
-                //                result.append(nil as AnyObject?)
             } else {
-                //                result.append(try getValue(field.type, index: index))
                 result[field.name] = try getValue(field.type, index: index)
                 
             }
