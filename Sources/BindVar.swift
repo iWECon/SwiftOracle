@@ -25,7 +25,7 @@ class BindVar: StringLiteralConvertible, IntegerLiteralConvertible, BooleanLiter
         }
     }
     init (fromString value: String) {
-        let v = Array(value.nulTerminatedUTF8).map( {Int8($0) })
+        let v = Array(value.nulTerminatedUTF8).map( {Int8(bitPattern: $0) })
         let p = UnsafeMutablePointer<Int8>.alloc(v.count)
         p.initializeFrom(v)
         bind = {st, name in OCI_BindString(st, name, p, 0)}

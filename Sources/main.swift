@@ -66,7 +66,7 @@ for i in 0..<1 {
     ////            print(r)
     //        }
     
-    try cursor.execute("insert into users (id, login, alive) values (USERS_ID_SEQ.nextval, :2, :3) RETURNING id INTO :id ", params: ["2": "as", "3": 3,], register: ["id": .int])
+    try cursor.execute("insert into users (id, login, alive) values (USERS_ID_SEQ.nextval, :2, :3) RETURNING id INTO :id ", params: ["2": "фіва", "3": 3,], register: ["id": .int])
 //    cursor.register("id", type: .int)
     
     for r in cursor {
