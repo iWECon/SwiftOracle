@@ -4,7 +4,7 @@ import cocilib
 @_exported import SQL
 
 
-enum OracleError: ErrorType {
+enum DatabaseError: ErrorType {
     case NotConnected, NotExecuted
 }
 
@@ -52,7 +52,7 @@ class Connection {
     }
     func cursor() throws -> Cursor {
         guard let connection = connection else {
-            throw OracleError.NotConnected
+            throw DatabaseError.NotConnected
         }
         return Cursor(connection: connection)
     }
@@ -72,7 +72,7 @@ class Connection {
     }
     func transaction_create() throws {
         guard let connection = connection else {
-            throw OracleError.NotExecuted
+            throw DatabaseError.NotExecuted
         }
 //        OCI_TransactionCreate(connection, nil, nil, nil)
     }

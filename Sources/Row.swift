@@ -24,9 +24,9 @@ class Field {
     var double: Double {
         return OCI_GetDouble(resultPointer, index)
     }
-    var value: AnyObject? {
+    var value: Any? {
         if self.isNull{
-            return nil as AnyObject?
+            return nil as Any?
         }
         switch type {
         case .string, .timestamp:
@@ -40,7 +40,7 @@ class Field {
             }
         default:
             assert(0==1,"bad value \(type)")
-            return "asd"
+            return "asd" as! AnyObject
         }
     }
 }
@@ -68,15 +68,15 @@ public class Row {
         let c = columns[index]
         return Field(resultPointer: resultPointer, index: index, type: c.type)
     }
-    lazy var dict: [String : AnyObject?] = {
-        var result: [String : AnyObject?]  = [:]
+    lazy var dict: [String : Any?] = {
+        var result: [String : Any?]  = [:]
         for (index, column) in self.columns.enumerate() {
             result[column.name] = Field(resultPointer: self.resultPointer, index: index, type: column.type).value
         }
         return result
     }()
-    lazy var list: [AnyObject?] = {
-        var result: [AnyObject?]  = []
+    lazy var list: [Any?] = {
+        var result: [Any?]  = []
         for (index, column) in self.columns.enumerate() {
             result.append(Field(resultPointer: self.resultPointer, index: index, type: column.type).value)
         }

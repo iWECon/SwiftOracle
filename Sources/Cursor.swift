@@ -123,7 +123,7 @@ public class Cursor : SequenceType, GeneratorType {
         }
         let executed = OCI_Execute(statementPointer);
         if executed != 1{
-            throw OracleError.NotExecuted
+            throw DatabaseError.NotExecuted
         }
         assert(executed==1)
         resultPointer = OCI_GetResultset(statementPointer)
