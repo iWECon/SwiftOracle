@@ -1,21 +1,7 @@
 import cocilib
 
-import Foundation
 
 
-class FieldValue {
-    
-}
-
-class ResultDict {
-    let fields: [Field]
-    init(fields: [Field]){
-        self.fields = fields
-    }
-    //    public subscript(name: String) -> FieldValue? {
-    
-    //    }
-}
 
 //OCI_CDT_NUMERIC
 public enum DataTypes {
@@ -59,13 +45,12 @@ public enum DataTypes {
 
 
 public class Cursor : SequenceType, GeneratorType {
-    public typealias RowType = [String: AnyObject?]
     
     public var resultPointer: COpaquePointer?
     private var statementPointer: COpaquePointer
     private let connection: COpaquePointer
     
-    private var _fields: [Field]?
+    private var _columns: [Column]?
     
     private var binded_vars: [BindVar] = []
     
@@ -80,11 +65,11 @@ public class Cursor : SequenceType, GeneratorType {
     public func clear() {
         OCI_StatementFree(statementPointer)
     }
-    private func get_fields() -> [Field] {
+    private func get_columns() -> [Column] {
         guard let resultPointer=self.resultPointer else {
             return []
         }
-        var result: [Field] = []
+        var result: [Column] = []
         let colsCount = OCI_GetColumnCount(resultPointer)
         for i in 1...colsCount {
             let col = OCI_GetColumn(resultPointer, i)
@@ -93,7 +78,7 @@ public class Cursor : SequenceType, GeneratorType {
             
             let type = DataTypes(col: col)
             result.append(
-                Field(name: name!, type: type
+                Column(name: name!, type: type
                 )
             )
         }
@@ -102,31 +87,9 @@ public class Cursor : SequenceType, GeneratorType {
     var affected: Int {
         return Int(OCI_GetAffectedRows(statementPointer))
     }
-    func getValue(type: DataTypes, index: UInt32) throws -> AnyObject {
-        guard let resultPointer=resultPointer else {
-            throw OracleError.NotExecuted
-        }
-        switch type {
-        case .string, .timestamp:
-            let s = OCI_GetString(resultPointer, index)
-            return String.fromCString(s)!
-            
-        case let .number(scale):
-            if scale==0 {
-                return Int(OCI_GetInt(resultPointer, index))
-            }
-            else{
-                return OCI_GetDouble(resultPointer, index)
-            }
-        default:
-            assert(0==1,"bad value \(type)")
-            return "asd"
-        }
-        
-    }
     
     func reset() {
-        _fields = nil
+        _columns = nil
         binded_vars = []
         if resultPointer != nil{
             OCI_ReleaseResultsets(statementPointer)
@@ -159,10 +122,13 @@ public class Cursor : SequenceType, GeneratorType {
             self.register(name, type: type)
         }
         let executed = OCI_Execute(statementPointer);
+        if executed != 1{
+            throw OracleError.NotExecuted
+        }
         assert(executed==1)
         resultPointer = OCI_GetResultset(statementPointer)
     }
-    public func fetchone() -> RowType? {
+    public func fetchone() -> Row? {
         guard let resultPointer=resultPointer else {
             return nil
         }
@@ -170,30 +136,11 @@ public class Cursor : SequenceType, GeneratorType {
         if fetched == 0 {
             return nil
         }
-        return try? get_result()
+        return Row(resultPointer: resultPointer, columns: self.columns)
         
     }
-    public func next() -> RowType? {
+    public func next() -> Row? {
         return fetchone()
-    }
-    func get_result() throws -> RowType {
-        guard let resultPointer=resultPointer else {
-            throw OracleError.NotExecuted
-        }
-        var result: RowType = [:]
-        
-        for (fieldIndex, field) in fields.enumerate() {
-            let index = UInt32(fieldIndex+1)
-            if OCI_IsNull(resultPointer, index) == 1 {
-                result[field.name] = nil as AnyObject?
-            } else {
-                result[field.name] = try getValue(field.type, index: index)
-                
-            }
-        }
-        
-        return result
-        
     }
     
     public var count: Int {
@@ -203,11 +150,11 @@ public class Cursor : SequenceType, GeneratorType {
         return Int(OCI_GetRowCount(resultPointer))
     }
     
-    public var fields: [Field] {
-        if _fields == nil {
-            _fields = get_fields()
+    public var columns: [Column] {
+        if _columns == nil {
+            _columns = get_columns()
         }
-        return _fields!
+        return _columns!
     }
 }
 
