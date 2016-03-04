@@ -15,25 +15,6 @@
 
 
 
-public struct OracleService {
-    var raw_str: String?, host:String?, port:String?, service:String?
-    init(from_string raw_str: String){
-        self.raw_str = raw_str
-    }
-    init(host: String, port: String, service: String) {
-        self.host = host; self.port = port; self.service = service
-    }
-    
-    var string: String {
-        if let raw_str = raw_str {
-            return raw_str
-        }
-        if let host = host, port = port, service = service  {
-            return "\(host):\(port)/\(service)"
-        }
-        return ""
-    }
-}
 
 //let timestamp = NSDate().timeIntervalSince1970
 // var c: Connection? = Connection()
