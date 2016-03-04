@@ -123,9 +123,8 @@ public class Cursor : SequenceType, GeneratorType {
         }
         let executed = OCI_Execute(statementPointer);
         if executed != 1{
-            throw DatabaseError.NotExecuted
+            throw DatabaseErrors.NotExecuted
         }
-        assert(executed==1)
         resultPointer = OCI_GetResultset(statementPointer)
     }
     public func fetchone() -> Row? {
