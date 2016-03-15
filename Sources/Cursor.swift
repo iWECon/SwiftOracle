@@ -84,7 +84,7 @@ public class Cursor : SequenceType, GeneratorType {
         }
         return result
     }
-    var affected: Int {
+    public var affected: Int {
         return Int(OCI_GetAffectedRows(statementPointer))
     }
     
@@ -97,12 +97,12 @@ public class Cursor : SequenceType, GeneratorType {
         resultPointer = nil
     }
     
-    func bind(name: String, bindVar: BindVar) {
+    public func bind(name: String, bindVar: BindVar) {
         bindVar.bind(statementPointer, name)
         binded_vars.append(bindVar)
     }
     
-    func register(name: String, type: DataTypes) {
+    public func register(name: String, type: DataTypes) {
         switch type {
         case .int:
             OCI_RegisterInt(statementPointer, name)
@@ -111,7 +111,7 @@ public class Cursor : SequenceType, GeneratorType {
         }
     }
     
-    func execute(statement: String, params: [String: BindVar]=[:], register: [String: DataTypes]=[:]) throws {
+    public func execute(statement: String, params: [String: BindVar]=[:], register: [String: DataTypes]=[:]) throws {
         reset()
         let prepared = OCI_Prepare(statementPointer, statement)
         assert(prepared == 1)

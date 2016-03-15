@@ -8,71 +8,49 @@ import cocilib
 
 
 
-class BindVar: StringLiteralConvertible, IntegerLiteralConvertible, BooleanLiteralConvertible, FloatLiteralConvertible  {
+public class BindVar: StringLiteralConvertible, IntegerLiteralConvertible, BooleanLiteralConvertible, FloatLiteralConvertible  {
     let bind: (COpaquePointer, String) -> Void
-    private let dealoc: () -> Void
-    deinit{
-        dealoc()
+    var value: Any
+    public init(_ value: Int) {
+        var v = Int32(value)
+        bind = { st, name in OCI_BindInt(st, name, &v) }
+        self.value = v
+        
     }
-    init( fromInt value: Int) {
-        let v = Int32(value)
-        let p = UnsafeMutablePointer<Int32>.alloc(1)
-        p.initialize(v)
-        bind = { st, name in OCI_BindInt(st, name, p) }
-        dealoc = {
-            p.destroy()
-            p.dealloc(1)
-        }
+    public init (_ value: String) {
+        var v = Array(value.nulTerminatedUTF8).map( {Int8(bitPattern: $0) })
+        bind = {st, name in OCI_BindString(st, name, &v, 0)}
+        self.value = v
     }
-    init (fromString value: String) {
-        let v = Array(value.nulTerminatedUTF8).map( {Int8(bitPattern: $0) })
-        let p = UnsafeMutablePointer<Int8>.alloc(v.count)
-        p.initializeFrom(v)
-        bind = {st, name in OCI_BindString(st, name, p, 0)}
-        dealoc = {
-            p.destroy()
-            p.dealloc(v.count)
-        }
-    }
-    init (fromBool value: Bool) {
-        let p = UnsafeMutablePointer<Int32>.alloc(1)
-        p.initialize(Int32((value) ? 1: 0))
-        bind = {st, name in OCI_BindBoolean(st, name, p)}
-        dealoc = {
-            p.destroy()
-            p.dealloc(1)
-        }
+    public init (_ value: Bool) {
+        var v = Int32((value) ? 1: 0)
+        bind = {st, name in OCI_BindBoolean(st, name, &v)}
+        self.value = v
     }
     
-    
-    init (fromDouble value: Double) {
-        let p = UnsafeMutablePointer<Double>.alloc(1)
-        p.initialize(value)
-        bind = {st, name in OCI_BindDouble(st, name, p)}
-        dealoc = {
-            p.destroy()
-            p.dealloc(1)
-        }
-    }
-
-    required convenience init(stringLiteral value: String) {
-        self.init(fromString: value)
-    }
-    required convenience init(extendedGraphemeClusterLiteral value: String) {
-        self.init(fromString: value)
-    }
-    required convenience init(unicodeScalarLiteral value: String) {
-        self.init(fromString: value)
-    }
-    required convenience init(integerLiteral value: Int){
-        self.init(fromInt: value)
-    }
-    required convenience init(booleanLiteral value: Bool) {
-        self.init(fromBool: value)
+    public init (_ value: Double) {
+        var v = value
+        bind = {st, name in OCI_BindDouble(st, name, &v)}
+        self.value = v
     }
     
-    required convenience init(floatLiteral value: Double) {
-        self.init(fromDouble: value)
+    public required convenience init(stringLiteral value: String) {
+        self.init(value)
+    }
+    public required convenience init(extendedGraphemeClusterLiteral value: String) {
+        self.init(value)
+    }
+    public required convenience init(unicodeScalarLiteral value: String) {
+        self.init( value)
+    }
+    public required convenience init(integerLiteral value: Int){
+        self.init(value)
+    }
+    public required convenience init(booleanLiteral value: Bool) {
+        self.init(value)
+    }
+    public required convenience init(floatLiteral value: Double) {
+        self.init(value)
     }
 }
 

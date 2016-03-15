@@ -1,7 +1,7 @@
 
 import cocilib
-
-@_exported import SQL
+import String
+//@_exported import SQL
 
 
 struct DatabaseError: CustomStringConvertible {
@@ -45,10 +45,10 @@ public struct ConnectionInfo {
 
 public struct OracleService {
     var raw_str: String?, host:String?, port:String?, service:String?
-    init(from_string raw_str: String){
+    public init(from_string raw_str: String){
         self.raw_str = raw_str
     }
-    init(host: String, port: String, service: String) {
+    public init(host: String, port: String, service: String) {
         self.host = host; self.port = port; self.service = service
     }
     
@@ -65,7 +65,7 @@ public struct OracleService {
 
 
 
-class Connection {
+public class Connection {
     // associatedtype Error: ErrorType
     
     private var connection: COpaquePointer? = nil
@@ -73,11 +73,10 @@ class Connection {
     
     let conn_info: ConnectionInfo
     
-    required init(service: OracleService, user:String, pwd: String) {
+    public required init(service: OracleService, user:String, pwd: String) {
         conn_info = ConnectionInfo(service_name: service.string, user: user, pwd: pwd)
         OCI_Initialize({error_callback($0)}, nil, UInt32(OCI_ENV_DEFAULT)); //should be once per app
     }
-    
     
     func close() {
         guard var connection = connection else {
@@ -86,22 +85,22 @@ class Connection {
         OCI_ConnectionFree(connection)
         connection = nil
     }
-    func open() throws {
+    public func open() throws {
         connection = OCI_ConnectionCreate(conn_info.service_name, conn_info.user, conn_info.pwd, UInt32(OCI_SESSION_DEFAULT));
     }
-    func cursor() throws -> Cursor {
+    public func cursor() throws -> Cursor {
         guard let connection = connection else {
             throw DatabaseErrors.NotConnected
         }
         return Cursor(connection: connection)
     }
-    var connected: Bool {
+    public var connected: Bool {
         guard let connection = connection else {
             return false
         }
         return OCI_IsConnected(connection) == 1
     }
-    var autocommit: Bool {
+    public var autocommit: Bool {
         set(newValue) {
             OCI_SetAutoCommit(connection!, (newValue) ? 1 : 0)
         }
