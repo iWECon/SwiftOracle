@@ -9,7 +9,7 @@ import cocilib
 
 
 public class BindVar: StringLiteralConvertible, IntegerLiteralConvertible, BooleanLiteralConvertible, FloatLiteralConvertible  {
-    let bind: (COpaquePointer, String) -> Void
+    let bind: (OpaquePointer, String) -> Void
     var value: Any
     public init(_ value: Int) {
         var v = Int32(value)

@@ -3,10 +3,10 @@ import cocilib
 
 
 public class Field {
-    private let resultPointer: COpaquePointer
+    private let resultPointer: OpaquePointer
     private let index: UInt32
     let type: DataTypes
-    init(resultPointer: COpaquePointer, index: Int, type: DataTypes){
+    init(resultPointer: OpaquePointer, index: Int, type: DataTypes){
         self.resultPointer = resultPointer
         self.index = UInt32(index+1)
         self.type = type
@@ -16,7 +16,7 @@ public class Field {
     }
     public var string: String {
         let s = OCI_GetString(resultPointer, index)
-        return String.fromCString(s)!
+        return String(validatingUTF8: s)!
     }
     public var int: Int {
         return Int(OCI_GetInt(resultPointer, index))
@@ -47,15 +47,15 @@ public class Field {
 
 
 public class Row {
-    private let resultPointer: COpaquePointer
+    private let resultPointer: OpaquePointer
     let columns: [Column]
     //todo invalidate row
-    init(resultPointer: COpaquePointer, columns: [Column]){
+    init(resultPointer: OpaquePointer, columns: [Column]){
         self.resultPointer = resultPointer
         self.columns = columns
     }
     public subscript (name: String) -> Field? {
-        let maybeIndex = columns.indexOf({$0.name==name})
+        let maybeIndex = columns.index(where: {$0.name==name})
         guard let index = maybeIndex else {
             return nil
         }
@@ -70,14 +70,14 @@ public class Row {
     }
     public lazy var dict: [String : Any?] = {
         var result: [String : Any?]  = [:]
-        for (index, column) in self.columns.enumerate() {
+        for (index, column) in self.columns.enumerated() {
             result[column.name] = Field(resultPointer: self.resultPointer, index: index, type: column.type).value
         }
         return result
     }()
     public lazy var list: [Any?] = {
         var result: [Any?]  = []
-        for (index, column) in self.columns.enumerate() {
+        for (index, column) in self.columns.enumerated() {
             result.append(Field(resultPointer: self.resultPointer, index: index, type: column.type).value)
         }
         return result

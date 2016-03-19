@@ -6,7 +6,7 @@ import cocilib
 //OCI_CDT_NUMERIC
 public enum DataTypes {
     case number(scale: Int), int, timestamp, bool, string, invalid
-    init(col: COpaquePointer){
+    init(col: OpaquePointer){
         let type = OCI_ColumnGetType(col)
         switch Int32(type) {
         case OCI_CDT_NUMERIC:
@@ -44,17 +44,17 @@ public enum DataTypes {
 
 
 
-public class Cursor : SequenceType, GeneratorType {
+public class Cursor : Sequence, IteratorProtocol {
     
-    public var resultPointer: COpaquePointer?
-    private var statementPointer: COpaquePointer
-    private let connection: COpaquePointer
+    public var resultPointer: OpaquePointer?
+    private var statementPointer: OpaquePointer
+    private let connection: OpaquePointer
     
     private var _columns: [Column]?
     
     private var binded_vars: [BindVar] = []
     
-    public init(connection: COpaquePointer) {
+    public init(connection: OpaquePointer) {
         self.connection = connection
         statementPointer = OCI_StatementCreate(connection)
     }
@@ -74,7 +74,7 @@ public class Cursor : SequenceType, GeneratorType {
         for i in 1...colsCount {
             let col = OCI_GetColumn(resultPointer, i)
             let name_p =  OCI_ColumnGetName(col)
-            let name =  String.fromCString(name_p)
+            let name =  String(validatingUTF8: name_p)
             
             let type = DataTypes(col: col)
             result.append(

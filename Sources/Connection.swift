@@ -5,9 +5,9 @@ import String
 
 
 struct DatabaseError: CustomStringConvertible {
-    let error: COpaquePointer
+    let error: OpaquePointer
     var text: String {
-        return String.fromCString(OCI_ErrorGetString(error))!
+        return String(validatingUTF8: OCI_ErrorGetString(error))!
     }
     var type: Int {
         return Int(OCI_ErrorGetType(error))
@@ -18,9 +18,9 @@ struct DatabaseError: CustomStringConvertible {
     var statement: String {
         let st = OCI_ErrorGetStatement(error)
         let text = OCI_GetSql(st)
-        return String.fromCString(text)!
+        return String(validatingUTF8: text)!
     }
-    init(_ error: COpaquePointer) {
+    init(_ error: OpaquePointer) {
         self.error = error
     }
     var description: String {
@@ -29,11 +29,11 @@ struct DatabaseError: CustomStringConvertible {
     
 }
 
-enum DatabaseErrors: ErrorType {
+enum DatabaseErrors: ErrorProtocol {
     case NotConnected, NotExecuted
 }
 
-func error_callback(error: COpaquePointer) {
+func error_callback(error: OpaquePointer) {
     print(DatabaseError(error))
 }
 
@@ -68,7 +68,7 @@ public struct OracleService {
 public class Connection {
     // associatedtype Error: ErrorType
     
-    private var connection: COpaquePointer? = nil
+    private var connection: OpaquePointer? = nil
     
     
     let conn_info: ConnectionInfo
