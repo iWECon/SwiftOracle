@@ -1,6 +1,6 @@
 
 import cocilib
-import String
+
 //@_exported import SQL
 
 
@@ -24,7 +24,7 @@ struct DatabaseError: CustomStringConvertible {
         self.error = error
     }
     var description: String {
-        return "text: \(text.trim()),\n\tstatement: \(statement)"
+        return "text: \(text)),\n\tstatement: \(statement)"
     }
     
 }
@@ -33,7 +33,7 @@ enum DatabaseErrors: ErrorProtocol {
     case NotConnected, NotExecuted
 }
 
-func error_callback(error: OpaquePointer) {
+func error_callback(_ error: OpaquePointer) {
     print(DatabaseError(error))
 }
 
@@ -83,7 +83,7 @@ public class Connection {
             return
         }
         OCI_ConnectionFree(connection)
-        connection = nil
+        self.connection = nil
     }
     public func open() throws {
         connection = OCI_ConnectionCreate(conn_info.service_name, conn_info.user, conn_info.pwd, UInt32(OCI_SESSION_DEFAULT));

@@ -97,12 +97,12 @@ public class Cursor : Sequence, IteratorProtocol {
         resultPointer = nil
     }
     
-    public func bind(name: String, bindVar: BindVar) {
+    public func bind(_ name: String, bindVar: BindVar) {
         bindVar.bind(statementPointer, name)
         binded_vars.append(bindVar)
     }
     
-    public func register(name: String, type: DataTypes) {
+    public func register(_ name: String, type: DataTypes) {
         switch type {
         case .int:
             OCI_RegisterInt(statementPointer, name)
@@ -111,7 +111,7 @@ public class Cursor : Sequence, IteratorProtocol {
         }
     }
     
-    public func execute(statement: String, params: [String: BindVar]=[:], register: [String: DataTypes]=[:]) throws {
+    public func execute(_ statement: String, params: [String: BindVar]=[:], register: [String: DataTypes]=[:]) throws {
         reset()
         let prepared = OCI_Prepare(statementPointer, statement)
         assert(prepared == 1)
