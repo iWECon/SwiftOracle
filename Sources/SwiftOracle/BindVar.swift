@@ -8,7 +8,7 @@ import cocilib
 
 
 
-public class BindVar: StringLiteralConvertible, IntegerLiteralConvertible, BooleanLiteralConvertible, FloatLiteralConvertible  {
+open class BindVar: ExpressibleByStringLiteral, ExpressibleByIntegerLiteral, ExpressibleByBooleanLiteral, ExpressibleByFloatLiteral  {
     let bind: (OpaquePointer, String) -> Void
     var value: Any
     public init(_ value: Int) {
@@ -18,7 +18,7 @@ public class BindVar: StringLiteralConvertible, IntegerLiteralConvertible, Boole
         
     }
     public init (_ value: String) {
-        var v = Array(value.nulTerminatedUTF8).map( {Int8(bitPattern: $0) })
+        var v = Array(value.utf8CString)
         bind = {st, name in OCI_BindString(st, name, &v, 0)}
         self.value = v
     }
