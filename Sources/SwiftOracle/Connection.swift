@@ -18,7 +18,7 @@ struct DatabaseError: CustomStringConvertible {
     var statement: String {
         let st = OCI_ErrorGetStatement(error)
         let text = OCI_GetSql(st)
-        return String(validatingUTF8: text)!
+        return String(validatingUTF8: text!)!
     }
     init(_ error: OpaquePointer) {
         self.error = error
@@ -29,11 +29,15 @@ struct DatabaseError: CustomStringConvertible {
     
 }
 
-enum DatabaseErrors: ErrorProtocol {
-    case NotConnected, NotExecuted
+enum DatabaseErrors: Error {
+    case notConnected, notExecuted
 }
 
-func error_callback(_ error: OpaquePointer) {
+func error_callback(_ error: OpaquePointer?) {
+    guard let error = error else {
+        print("error is null")
+        return
+    }
     print(DatabaseError(error))
 }
 
@@ -56,7 +60,7 @@ public struct OracleService {
         if let raw_str = raw_str {
             return raw_str
         }
-        if let host = host, port = port, service = service  {
+        if let host = host, let port = port, let service = service  {
             return "\(host):\(port)/\(service)"
         }
         return ""
@@ -65,10 +69,10 @@ public struct OracleService {
 
 
 
-public class Connection {
+open class Connection {
     // associatedtype Error: ErrorType
     
-    private var connection: OpaquePointer? = nil
+    fileprivate var connection: OpaquePointer? = nil
     
     
     let conn_info: ConnectionInfo
@@ -79,28 +83,28 @@ public class Connection {
     }
     
     func close() {
-        guard var connection = connection else {
+        guard let connection = connection else {
             return
         }
         OCI_ConnectionFree(connection)
         self.connection = nil
     }
-    public func open() throws {
+    open func open() throws {
         connection = OCI_ConnectionCreate(conn_info.service_name, conn_info.user, conn_info.pwd, UInt32(OCI_SESSION_DEFAULT));
     }
-    public func cursor() throws -> Cursor {
+    open func cursor() throws -> Cursor {
         guard let connection = connection else {
-            throw DatabaseErrors.NotConnected
+            throw DatabaseErrors.notConnected
         }
         return Cursor(connection: connection)
     }
-    public var connected: Bool {
+    open var connected: Bool {
         guard let connection = connection else {
             return false
         }
         return OCI_IsConnected(connection) == 1
     }
-    public var autocommit: Bool {
+    open var autocommit: Bool {
         set(newValue) {
             OCI_SetAutoCommit(connection!, (newValue) ? 1 : 0)
         }
@@ -110,7 +114,7 @@ public class Connection {
     }
     func transaction_create() throws {
         guard let connection = connection else {
-            throw DatabaseErrors.NotExecuted
+            throw DatabaseErrors.notExecuted
         }
 //        OCI_TransactionCreate(connection, nil, nil, nil)
     }
