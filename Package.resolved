@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "cocilib",
+        "repositoryURL": "https://github.com/iliasaz/cocilib",
+        "state": {
+          "branch": null,
+          "revision": "84520b1b7bd0a642d959da2201201a78c24aae17",
+          "version": "1.1.0"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
