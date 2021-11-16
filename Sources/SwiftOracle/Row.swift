@@ -55,7 +55,7 @@ open class Row {
         self.columns = columns
     }
     open subscript (name: String) -> Field? {
-        let maybeIndex = columns.firstIndex(where: {$0.name==name})
+        let maybeIndex = columns.index(where: {$0.name==name})
         guard let index = maybeIndex else {
             return nil
         }

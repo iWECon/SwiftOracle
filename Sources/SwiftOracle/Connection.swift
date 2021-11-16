@@ -113,7 +113,7 @@ open class Connection {
         }
     }
     func transaction_create() throws {
-        guard connection != nil else {
+        guard let connection = connection else {
             throw DatabaseErrors.notExecuted
         }
 //        OCI_TransactionCreate(connection, nil, nil, nil)
