@@ -9,7 +9,8 @@ let package = Package(
         .library(name: "SwiftOracle", targets: ["SwiftOracle"])
     ],
     dependencies: [
-        .package(url: "https://github.com/iliasaz/cocilib", .upToNextMajor(from: "1.1.0"))
+        .package(url: "https://github.com/iWECon/cocilib", .upToNextMajor(from: "1.1.1"))
+//        .package(url: "https://github.com/iliasaz/cocilib", .upToNextMajor(from: "1.1.0"))
     ],
     targets: [
         .target(name: "SwiftOracle", dependencies: ["cocilib"])
