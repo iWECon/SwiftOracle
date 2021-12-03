@@ -14,15 +14,29 @@ open class Field {
     open var isNull: Bool {
         return OCI_IsNull(resultPointer, index) == 1
     }
-    open var string: String {
-        let s = OCI_GetString(resultPointer, index)
-        return String(validatingUTF8: s!)!
+    open var string: String? {
+        if let s = OCI_GetString(resultPointer, index) {
+            return String(validatingUTF8: s)
+        }
+        return nil
     }
     open var int: Int {
         return Int(OCI_GetInt(resultPointer, index))
     }
     open var double: Double {
         return OCI_GetDouble(resultPointer, index)
+    }
+    open var datetime: String? {
+        var year: Int32 = -1,
+            month: Int32 = -1,
+            day: Int32 = -1,
+            hour: Int32 = -1,
+            min: Int32 = -1,
+            sec: Int32 = -1
+        if (OCI_DateGetDateTime(resultPointer, &year, &month, &day, &hour, &min, &sec) != 0) {
+            return "\(year)-\(month)-\(day) \(hour):\(min):\(sec)"
+        }
+        return nil
     }
     open var value: Any? {
         if self.isNull{
@@ -39,7 +53,7 @@ open class Field {
                 return self.double
             }
         case .datetime:
-            return self.string
+            return self.datetime
         default:
             assert(0 == 1, "bad value \(type)")
             return "asd" as AnyObject
