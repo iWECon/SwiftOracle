@@ -5,7 +5,7 @@ import cocilib
 
 //OCI_CDT_NUMERIC
 public enum DataTypes {
-    case number(scale: Int), int, timestamp, bool, string, invalid
+    case number(scale: Int), int, timestamp, bool, string, invalid, datetime
     init(col: OpaquePointer){
         let type = OCI_ColumnGetType(col)
         switch Int32(type) {
@@ -18,6 +18,8 @@ public enum DataTypes {
             self = .timestamp
         case OCI_CDT_BOOLEAN:
             self = .bool
+        case OCI_CDT_DATETIME:
+            self = .datetime
         default:
             self = .invalid
             assert(1==0)
