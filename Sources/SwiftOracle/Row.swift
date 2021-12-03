@@ -33,7 +33,10 @@ open class Field {
             hour: Int32 = -1,
             min: Int32 = -1,
             sec: Int32 = -1
-        if (OCI_DateGetDateTime(resultPointer, &year, &month, &day, &hour, &min, &sec) != 0) {
+        
+        if let datePointer = OCI_GetDate(resultPointer, index),
+           (OCI_DateGetDateTime(datePointer, &year, &month, &day, &hour, &min, &sec) != 0)
+        {
             return "\(year)-\(month)-\(day) \(hour):\(min):\(sec)"
         }
         return nil
