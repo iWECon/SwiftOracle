@@ -35,9 +35,22 @@ open class Field {
             sec: Int32 = -1
         
         if let datePointer = OCI_GetDate(resultPointer, index),
-           (OCI_DateGetDateTime(datePointer, &year, &month, &day, &hour, &min, &sec) != 0)
-        {
-            return "\(year)-\(month)-\(day) \(hour):\(min):\(sec)"
+           (OCI_DateGetDateTime(datePointer, &year, &month, &day, &hour, &min, &sec) != 0) {
+            
+            func prefixFixZero(value: Int32, min: Int32, fix: String) -> String {
+                if value < min {
+                    return "\(fix)\(value)"
+                }
+                return "\(value)"
+            }
+            
+            let _month = prefixFixZero(value: month, min: 10, fix: "0")
+            let _day = prefixFixZero(value: day, min: 10, fix: "0")
+            let _hour = prefixFixZero(value: hour, min: 10, fix: "0")
+            let _min = prefixFixZero(value: min, min: 10, fix: "0")
+            let _sec = prefixFixZero(value: sec, min: 10, fix: "0")
+            
+            return "\(year)-\(_month)-\(_day) \(_hour):\(_min):\(_sec)"
         }
         return nil
     }
