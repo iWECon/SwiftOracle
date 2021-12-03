@@ -38,8 +38,10 @@ open class Field {
             else{
                 return self.double
             }
+        case .datetime:
+            return self.string
         default:
-            assert(0==1,"bad value \(type)")
+            assert(0 == 1, "bad value \(type)")
             return "asd" as AnyObject
         }
     }
